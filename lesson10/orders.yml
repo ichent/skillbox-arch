@@ -1,0 +1,124 @@
+openapi: 3.0.0
+info:
+  title: Order Service API
+  description: API монолита для управления заказами
+  version: 1.1.0
+servers:
+  - url: https://site.ru/api/v1
+paths:
+  /orders:
+    post:
+      summary: Создание нового заказа
+      description: |
+        Инициирует процесс оформления заказа. 
+        Синхронно проверяет актуальность цен и наличие в Каталоге.
+        В случае успеха сохраняет заказ и запускает асинхронное резервирование.
+      operationId: createOrder
+      tags:
+        - Orders
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateOrderRequest'
+      responses:
+        '202':
+          description: Заказ успешно прошел валидацию и принят в обработку.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrderResponse'
+        '400':
+          description: Ошибка формата данных (неверный JSON, отрицательное кол-во).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '422':
+          description: Ошибка бизнес-логики (Товар не найден в Каталоге, Товар архивирован).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                code: "PRODUCT_NOT_FOUND"
+                message: "Товар с ID 12345 не найден в актуальном каталоге."
+        '503':
+          description: |
+            Сервис временно недоступен. 
+            Возникает, если внешний сервис Каталога недоступен или сработал Circuit Breaker.
+            Клиенту следует повторить запрос позже.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                code: "SERVICE_UNAVAILABLE"
+                message: "Не удалось получить данные о товаре. Повторите попытку через 30 секунд."
+
+components:
+  schemas:
+    CreateOrderRequest:
+      type: object
+      required:
+        - customer_id
+        - items
+        - delivery_address
+      properties:
+        customer_id:
+          type: integer
+          example: 4096
+        delivery_address:
+          type: string
+          example: "г. Москва, ул. Ленина, д. 1"
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/OrderItemRequest'
+
+    OrderItemRequest:
+      type: object
+      required:
+        - product_id
+        - quantity
+      properties:
+        product_id:
+          type: string
+          format: integer
+          example: 128483458
+        quantity:
+          type: integer
+          minimum: 1
+          example: 2
+
+    OrderResponse:
+      type: object
+      properties:
+        order_id:
+          type: integer
+          example: 778899
+        status:
+          type: string
+          enum: [PENDING, AWAITING_PAYMENT, CANCELLED]
+          example: "PENDING"
+        total_price:
+          type: number
+          format: float
+          example: 15400.50
+        created_at:
+          type: string
+          format: date-time
+        message:
+          type: string
+          example: "Заказ принят"
+
+    ErrorResponse:
+      type: object
+      properties:
+        code:
+          type: string
+          example: "SERVICE_UNAVAILABLE"
+        message:
+          type: string
+          example: "Внутренняя ошибка сервиса каталога"
