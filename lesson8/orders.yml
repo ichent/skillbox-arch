@@ -1,0 +1,103 @@
+openapi: 3.0.0
+info:
+  title: Order Service API
+  description: API монолита для управления заказами
+  version: 1.0.0
+servers:
+  - url: https://site.ru/api/v1
+paths:
+  /orders:
+    post:
+      summary: Создание нового заказа
+      description: |
+        Инициирует процесс оформления заказа. 
+        Рассчитывает итоговую стоимость, сохраняет заказ в статусе PENDING 
+        и запускает асинхронный процесс резервирования товаров.
+      operationId: createOrder
+      tags:
+        - Orders
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateOrderRequest'
+      responses:
+        '202':
+          description: Заказ принят в обработку
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrderResponse'
+        '400':
+          description: Ошибка валидации данных (неверный ID товара, кол-во < 1)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+components:
+  schemas:
+    CreateOrderRequest:
+      type: object
+      required:
+        - customer_id
+        - items
+        - delivery_address
+      properties:
+        customer_id:
+          type: integer
+          example: 4096
+          description: ID пользователя
+        delivery_address:
+          type: string
+          example: "г. Москва, ул. Ленина, д. 1"
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/OrderItemRequest'
+
+    OrderItemRequest:
+      type: object
+      required:
+        - product_id
+        - quantity
+      properties:
+        product_id:
+          type: string
+          format: integer
+          example: 128483458
+        quantity:
+          type: integer
+          minimum: 1
+          example: 2
+
+    OrderResponse:
+      type: object
+      properties:
+        order_id:
+          type: integer
+          example: 778899
+        status:
+          type: string
+          enum: [PENDING, AWAITING_PAYMENT, CANCELLED]
+          example: "PENDING"
+        total_price:
+          type: number
+          format: float
+          example: 15400.50
+        created_at:
+          type: string
+          format: date-time
+        message:
+          type: string
+          example: "Заказ создан, ожидайте подтверждения резерва"
+
+    ErrorResponse:
+      type: object
+      properties:
+        code:
+          type: string
+          example: "VALIDATION_ERROR"
+        message:
+          type: string
+          example: "Количество товара не может быть отрицательным"
