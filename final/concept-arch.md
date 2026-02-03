@@ -35,24 +35,25 @@ graph TD
     end
 
     %% Внешние системы (УДАЛЕНО: Система оплаты)
-    PhoneAPI[("Встроенные фитнес-функции")]
+    PhoneAPI[("Встроенные фитнес-функции телефона")]
     ExtSensors[("Внешние датчики\n(пульс, O2)")]
     CompanyApps[("Существующие\nприложения компании")]
 
     %% Связи
     User --> Profile
     User --> Workouts
+    User --> Inventory
 
     %% Связь с экосистемой
     IntModule --> Profile
     IntModule <--> CompanyApps
 
     Employee --> Promo
+    Employee --> Gamification
 
     %% Внутренние связи
     Workouts --> Gamification
     Workouts --> Profile
-    Gamification --> Inventory
     Promo --> Notify
     Notify --> User
 
