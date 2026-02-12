@@ -1,0 +1,140 @@
+erDiagram
+    %% === ДОМЕН: КАТАЛОГ ===
+    PRODUCT {
+        int id PK "Уникальный ID товара"
+        string sku "Артикул (unique)"
+        string name
+        string description
+        boolean is_active
+    }
+
+    PRICE_LIST {
+        int id PK
+        int product_id FK "Ссылка на товар"
+        decimal price
+        string price_type "Тип (розница, опт, акция)"
+        datetime valid_from
+        datetime valid_to
+    }
+
+    PRODUCT ||--o{ PRICE_LIST : "1:N (имеет историю цен)"
+
+    %% === ДОМЕН: КЛИЕНТЫ ===
+    CUSTOMER {
+        int id PK
+        string email "Login"
+        string phone
+        string full_name
+        datetime registered_at
+    }
+
+    LOYALTY_ACCOUNT {
+        int id PK
+        int customer_id FK "Ссылка на клиента"
+        decimal balance
+        int tier_level
+    }
+
+    WISHLIST_ITEM {
+        int id PK
+        int customer_id FK
+        int product_id FK
+    }
+
+    CUSTOMER ||--|| LOYALTY_ACCOUNT : "1:1 (имеет счет)"
+    CUSTOMER ||--o{ WISHLIST_ITEM : "1:N (сохраняет)"
+    PRODUCT ||--o{ WISHLIST_ITEM : "1:N (находится в)"
+
+    %% === ДОМЕН: ПРОДАЖИ (Корзина и Заказ) ===
+    CART {
+        int id PK
+        int customer_id FK "Может быть NULL (гость)"
+        string session_token
+        datetime updated_at
+    }
+
+    CART_ITEM {
+        int cart_id FK
+        int product_id FK
+        int quantity
+    }
+
+    CART ||--|{ CART_ITEM : "1:N (содержит)"
+    PRODUCT ||--o{ CART_ITEM : "1:N"
+
+    ORDER {
+        int id PK
+        int customer_id FK
+        datetime created_at
+        string status "ENUM: NEW, PAID, SHIPPED..."
+        decimal total_amount
+        string delivery_address
+    }
+
+    ORDER_ITEM {
+        int id PK
+        int order_id FK
+        int product_id FK
+        int quantity
+        decimal frozen_price "Snapshot цены при покупке"
+        decimal discount_amount
+    }
+
+    CUSTOMER ||--o{ ORDER : "1:N (оформляет)"
+    ORDER ||--|{ ORDER_ITEM : "1:N (состоит из)"
+    PRODUCT ||--o{ ORDER_ITEM : "1:N (ссылается)"
+
+    %% === ДОМЕН: ДОСТАВКА ===
+    SHIPMENT {
+        int id PK
+        int order_id FK
+        string tracking_number
+        string status
+        datetime shipped_at
+    }
+
+    ORDER ||--|{ SHIPMENT : "1:N (разбивается на)"
+
+    %% === ДОМЕН: ПЛАТЕЖИ ===
+    TRANSACTION {
+        int id PK
+        int order_id FK
+        decimal amount
+        string payment_gateway_id
+        string status "Success/Fail"
+        datetime transaction_date
+    }
+
+    ORDER ||--o{ TRANSACTION : "1:N (оплачивается)"
+
+    %% === ДОМЕН: ОТЗЫВЫ ===
+    REVIEW {
+        int id PK
+        int product_id FK
+        int customer_id FK
+        int rating "1-5"
+        text comment
+        boolean is_approved
+    }
+
+    PRODUCT ||--o{ REVIEW : "1:N"
+    CUSTOMER ||--o{ REVIEW : "1:N"
+
+    %% === ДОМЕН: КОММУНИКАЦИИ ===
+    NOTIFICATION {
+        int id PK
+        int customer_id FK
+        string type "Email/SMS"
+        string payload
+        boolean is_sent
+        datetime created_at
+    }
+
+    CUSTOMER ||--o{ NOTIFICATION : "1:N"
+
+    %% === ДОМЕН: СОТРУДНИКИ ===
+    EMPLOYEE {
+        int id PK
+        string username
+        string role_id
+    }
