@@ -1,3 +1,5 @@
+```mermaid
+
 graph TB
     subgraph "External Network (Internet)"
         Client[Mobile Devices]

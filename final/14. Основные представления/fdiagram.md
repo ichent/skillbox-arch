@@ -1,3 +1,5 @@
+```mermaid
+
 graph TD
     user((Пользователь)) --> mobile[Мобильное Приложение<br/>React Native]
 

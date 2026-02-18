@@ -1,3 +1,5 @@
+```mermaid
+
 sequenceDiagram
     actor U as User
     participant App as Mobile App
